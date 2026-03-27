@@ -55,7 +55,7 @@ body{
 
 /* ── SIDEBAR ─────────────────────────────────────────────────────────────────── */
 /* ── TOPBAR ───────────────────────────────────────────────────────────────────── */
-.topbar{position:fixed;top:0;left:0;right:0;height:58px;background:rgba(20,10,30,.55);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 2px 24px rgba(0,0,0,.25);display:flex;align-items:center;gap:0;z-index:400;padding:0 20px;}
+.topbar{position:fixed;top:0;left:0;right:0;height:58px;background:rgba(20,10,30,.55);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 2px 24px rgba(0,0,0,.25);display:flex;align-items:center;gap:0;z-index:600;padding:0 20px;}
 .topbar-logo{display:flex;align-items:center;gap:0;text-decoration:none;flex-shrink:0;}
 .topbar-logo img{height:28px;width:auto;}
 .topbar-nav{display:flex;align-items:center;gap:2px;flex:1;padding:0 16px;}
@@ -596,7 +596,7 @@ body{
 .ptile.ptile-locked{opacity:.42;cursor:default;background:#f0ecf4;}
 [data-theme="dark"] .ptile.ptile-locked{background:rgba(255,255,255,.06);}
 .ptile.ptile-locked:hover{box-shadow:none !important;border-color:rgba(159,33,126,.15) !important;}
-.unit-viewer{display:none;flex-direction:column;position:fixed;top:56px;left:0;right:0;bottom:0;z-index:500;background:var(--grad);}
+.unit-viewer{display:none;flex-direction:column;position:fixed;top:56px;left:0;right:0;bottom:0;z-index:550;background:var(--grad);}
 .unit-viewer.uv-open{display:flex;}
 .uv-bar{height:56px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 32px;}
 .uv-back{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:99px;padding:7px 16px;font-family:'Poppins',sans-serif;font-size:11.5px;font-weight:700;color:#FFFCF6;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:background .15s;white-space:nowrap;flex-shrink:0;}
@@ -1197,17 +1197,17 @@ var COMPLETION = {"gs":0,"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"
 
 // Lessons per unit — used for the checklist in the accordion
 var UNIT_LESSONS = {
-  "gs": ["Before We Start","Six Months of Photography","FAQ","Meet your Teachers","Setting Yourself up for Success","Assignment: Share a photo you are proud of"],
-  "1":  ["Understanding Photography","Inspiration & Feedback","What is a Camera?","Types of Cameras","Lenses","Focal Length","Raw vs JPEG","Digital Workflow","Knowledge Check","Assignment"],
-  "2":  ["Exposure","Histogram","Exposure Triangle","Aperture","Depth of Field","Shutter Speed","ISO","Knowledge Check","Assignment"],
-  "3":  ["Natural Light","Artificial Light","Creative Light","Compositional Guidelines","Color Theory","Knowledge Check","Assignment"],
-  "4":  ["Workflow","Objects & Landscapes","Portraits","Real Time Processing","Knowledge Check","Assignment"],
-  "5":  ["Visual Narrative","Study the Masters","Photo Essays","Culling","Break the Rules","Inspiration","Receiving Feedback","Giving Feedback","Knowledge Check","Assignment"],
-  "6":  ["Focus Systems","Autofocus","Manual Focus","Metering Modes","Flash and Flash Accessories","Knowledge Check","Assignment"],
-  "7":  ["Revisiting Goals","Brainstorming","Beginning a Project","Assignment"],
-  "8":  ["Lighting, Part 2","Composition, Part 2","Color, Part 2","Knowledge Check","Assignment"],
-  "9":  ["Inspire Yourself","Genre Exploration","Try Something New","Assignment"],
-  "10": ["Confidence in Sharing","Putting it all Together","How to Go Further","Assignment"],
+  "gs": ["Before We Start","Six Months of Photography","FAQ","Meet your Teachers","Setting Yourself up for Success"],
+  "1":  ["Understanding Photography","Inspiration & Feedback","What is a Camera?","Types of Cameras","Lenses","Focal Length","Raw vs JPEG","Digital Workflow"],
+  "2":  ["Exposure","Histogram","Exposure Triangle","Aperture","Depth of Field","Shutter Speed","ISO"],
+  "3":  ["Natural Light","Artificial Light","Creative Light","Compositional Guidelines","Color Theory"],
+  "4":  ["Workflow","Objects & Landscapes","Portraits","Real Time Processing"],
+  "5":  ["Visual Narrative","Study the Masters","Photo Essays","Culling","Break the Rules","Inspiration","Receiving Feedback","Giving Feedback"],
+  "6":  ["Focus Systems","Autofocus","Manual Focus","Metering Modes","Flash and Flash Accessories"],
+  "7":  ["Revisiting Goals","Brainstorming","Beginning a Project"],
+  "8":  ["Lighting, Part 2","Composition, Part 2","Color, Part 2"],
+  "9":  ["Inspire Yourself","Genre Exploration","Try Something New"],
+  "10": ["Confidence in Sharing","Putting it all Together","How to Go Further"],
   "fp": ["Final Project","Ongoing Practice"]
 };
 
@@ -1517,6 +1517,13 @@ function savePhoto(slot, dataUrl) {
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
 function nav(id, pushState) {
+  // Close unit viewer if open when navigating
+  var uv = document.getElementById('unit-viewer');
+  if (uv && uv.classList.contains('uv-open')) {
+    uv.classList.remove('uv-open');
+    var iframe = document.getElementById('uv-iframe');
+    if (iframe) iframe.src = '';
+  }
   document.querySelectorAll(".view").forEach(function(v) { v.classList.remove("active"); });
   document.getElementById("view-" + id).classList.add("active");
   document.querySelectorAll(".tni,.dni,.ni,.bni").forEach(function(n) { n.classList.remove("active"); });
@@ -2114,10 +2121,18 @@ function openUnitPanel(uid, silent) {
   var footerDiv = document.createElement("div");
   footerDiv.className = "um-footer";
   footerDiv.style.marginTop = "40px";
-  footerDiv.innerHTML = (prevUid ? '<button class="um-back" onclick="openUnitPanel(\'' + prevUid + '\')">← Previous</button>' : '<div></div>')
+  // Find the COURSE_UNITS entry for current uid to open the lesson
+  var curCU = null; COURSE_UNITS.forEach(function(x){ if(String(x.id)===uid) curCU=x; });
+  footerDiv.innerHTML = '<div></div>'
     + '<div class="um-footer-center">All changes saved automatically</div>'
-    + (nextLabel ? '<button class="um-footer-btn" onclick="openUnitPanel(\'' + nextUid + '\')">Next: ' + nextLabel + ' →</button>'
-                 : '<button class="um-footer-btn" onclick="nav(\'dashboard\')">Back to dashboard ✓</button>');
+    + '<div></div>';
+  if (curCU && curCU.url) {
+    var openBtn = document.createElement('button');
+    openBtn.className = 'um-footer-btn primary';
+    openBtn.textContent = 'Open unit →';
+    openBtn.onclick = (function(cu){ return function(){ openUnitViewer(cu); }; })(curCU);
+    footerDiv.lastChild.replaceWith(openBtn);
+  }
   panel.appendChild(footerDiv);
   // Animate chips
   setTimeout(function(){
@@ -2143,6 +2158,14 @@ function buildUnitContent(uid, u) {
         + '<svg class="lchip-check" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="currentColor" stroke-width="1"/>' + checkSvg + '</svg>'
         + l + '</div>';
     });
+    // Assignment chip — auto-completes on photo upload
+    var assignLessonKey = 'lesson_' + uid + '_' + lessons.length;
+    var assignDone = !!D[assignLessonKey] || !!(D['photos-'+uid] && D['photos-'+uid].length);
+    if (assignDone && !D[assignLessonKey]) { D[assignLessonKey] = true; }
+    var assignCheck = assignDone ? '<path d="M3 5l1.5 1.5L7 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' : '';
+    content += '<div class="lchip' + (assignDone ? ' done' : '') + '" style="cursor:default;opacity:.8;">'
+      + '<svg class="lchip-check" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="currentColor" stroke-width="1"/>' + assignCheck + '</svg>'
+      + 'Assignment</div>';
     content += '</div></div>';
   }
   // Reflection prompts — tabbed
@@ -2434,7 +2457,18 @@ function handleAPhotoMulti(e, uid) {
         D["photo-" + uid] = arr[0]; // keep gallery compat
         persist();
         done++;
-        if (done === toAdd.length) { refreshAssignPhotos(uid); toast("Photo" + (done > 1 ? "s" : "") + " added \u2713"); }
+        if (done === toAdd.length) {
+          refreshAssignPhotos(uid);
+          // Auto-mark assignment complete on first photo upload
+          var lessons = UNIT_LESSONS[uid] || [];
+          var assignKey = 'lesson_' + uid + '_' + lessons.length; // index after last lesson
+          if (!D[assignKey]) {
+            D[assignKey] = true;
+            saveUnitProgress(uid);
+            renderCourseGrid();
+          }
+          toast("Photo" + (done > 1 ? "s" : "") + " added \u2713");
+        }
       });
     };
     r.readAsDataURL(f);
@@ -2903,6 +2937,12 @@ function _uvLoad(u) {
   document.getElementById('uv-title').textContent = u.id==='gs'?'Getting Started':u.id==='fp'?'Final Project':u.num+': '+u.title;
   document.getElementById('uv-sub').textContent = u.sub;
   document.getElementById('uv-iframe').src = u.url;
+  // Auto-record unit start timestamp (option 4: opened = started)
+  var uid = String(u.id);
+  if (!D['unit_start_' + uid]) {
+    D['unit_start_' + uid] = Date.now();
+    persist();
+  }
   var prev=document.getElementById('uv-prev-btn');
   var next=document.getElementById('uv-next-btn');
   if(prev) prev.style.visibility = _uvCurrentIdx>0?'visible':'hidden';
@@ -2928,6 +2968,25 @@ function openCurrentUnitLesson() {
   COURSE_UNITS.forEach(function(cu){ if(String(cu.id)===curKey) u=cu; });
   if (u) openUnitViewer(u);
 }
+
+// ── LESSON COMPLETION via postMessage (from embedded Rise buttons) ────────────
+window.addEventListener('message', function(event) {
+  // Accept messages from our GitHub Pages lessons
+  if (!event.data || event.data.type !== 'lessonComplete') return;
+  var uid = String(event.data.unitId);
+  var lessonIdx = parseInt(event.data.lessonIndex);
+  if (isNaN(lessonIdx)) return;
+  var key = 'lesson_' + uid + '_' + lessonIdx;
+  if (D[key]) return; // already marked complete
+  D[key] = true;
+  saveUnitProgress(uid);
+  persist();
+  // Refresh tiles
+  renderCourseGrid();
+  renderDash();
+  // Show confirmation toast
+  toast('Lesson complete ✓');
+});
 
 var LOCAL_MODE = window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 if (LOCAL_MODE) {
