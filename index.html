@@ -1840,8 +1840,7 @@ function renderDash() {
       var filled = pct>50;
       if (isLocked) {
         tile.innerHTML = '<div class="ptile-label">'
-          + (u.id==='gs'||u.id==='fp' ? '' : '<div style="font-size:clamp(7px,0.7vw,10px);font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--on-card-muted);margin-bottom:3px;line-height:1;">'+u.num+'</div>')
-          + '<div class="ptile-name-text" style="color:var(--on-card);">'+u.title+'</div>'
+          + '<div class="ptile-name-text" style="color:var(--on-card);">'+(u.id==='gs'?'Getting Started':u.id==='fp'?'Final Project':u.num+': '+u.title)+'</div>'
           + '<div style="display:flex;align-items:center;gap:4px;margin-top:6px;font-size:9px;font-weight:600;color:var(--on-card-muted);">'
           + '<svg width="9" height="9" viewBox="0 0 12 12" fill="none"><rect x="2" y="5" width="8" height="6" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 5V3.5a2 2 0 014 0V5" stroke="currentColor" stroke-width="1.2"/></svg>'
           + 'Opens '+u.opens+'</div></div>';
@@ -2142,32 +2141,7 @@ function openUnitPanel(uid, silent) {
 
 function buildUnitContent(uid, u) {
   var content = "";
-  // Lesson chips
-  var lessons = UNIT_LESSONS[uid] || [];
-  if (lessons.length) {
-    var doneLessons = lessons.filter(function(l,i){ return D["lesson_"+uid+"_"+i]; }).length;
-    var pct = Math.round((doneLessons/lessons.length)*100);
-    content += '<div class="um-section">'
-      + '<div class="um-section-title">Lessons &nbsp;<span style="font-weight:700;color:var(--mag);">' + pct + '% complete</span></div>'
-      + '<div style="font-size:11.5px;color:var(--on-card-muted);margin-bottom:10px;">Click each lesson as you complete it.</div>'
-      + '<div class="lesson-chips" id="umchips-' + uid + '">';
-    lessons.forEach(function(l, i) {
-      var isDone = !!D["lesson_"+uid+"_"+i];
-      var checkSvg = isDone ? '<path d="M3 5l1.5 1.5L7 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' : '';
-      content += '<div class="lchip' + (isDone ? ' done' : '') + '" data-uid="' + uid + '" data-idx="' + i + '" onclick="handleChipClick(this)">'
-        + '<svg class="lchip-check" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="currentColor" stroke-width="1"/>' + checkSvg + '</svg>'
-        + l + '</div>';
-    });
-    // Assignment chip — auto-completes on photo upload
-    var assignLessonKey = 'lesson_' + uid + '_' + lessons.length;
-    var assignDone = !!D[assignLessonKey] || !!(D['photos-'+uid] && D['photos-'+uid].length);
-    if (assignDone && !D[assignLessonKey]) { D[assignLessonKey] = true; }
-    var assignCheck = assignDone ? '<path d="M3 5l1.5 1.5L7 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>' : '';
-    content += '<div class="lchip' + (assignDone ? ' done' : '') + '" style="cursor:default;opacity:.8;">'
-      + '<svg class="lchip-check" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4.5" stroke="currentColor" stroke-width="1"/>' + assignCheck + '</svg>'
-      + 'Assignment</div>';
-    content += '</div></div>';
-  }
+
   // Reflection prompts — tabbed
   var prompts = UNIT_PROMPTS[uid] || [];
   if (prompts.length) {
@@ -2513,7 +2487,11 @@ function renderGoals() {
   ids.forEach(function(id) { var el=document.getElementById(id); if(el&&D[id]) el.value=D[id]; });
   var grid = document.getElementById("goal-grid"); grid.innerHTML = "";
   if (!goals.length) {
-    renderSuggestedGoals(grid);
+    var empty = document.createElement("div");
+    empty.style.cssText = "grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--on-card-muted);font-size:13px;";
+    empty.innerHTML = '<div style="font-size:15px;font-weight:600;color:var(--on-card);margin-bottom:8px;">No goals yet</div>'
+      + 'Use <b>Suggested goals</b> above to get started, or add your own.';
+    grid.appendChild(empty);
     return;
   }
   goals.forEach(function(g, i) {
@@ -2898,8 +2876,7 @@ function renderCourseGrid() {
 
     if (isLocked) {
       tile.innerHTML = '<div class="ptile-label">'
-        + '<div style="font-size:clamp(7px,0.7vw,10px);font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--on-card-muted);margin-bottom:3px;line-height:1;">'+u.num+'</div>'
-        + '<div class="ptile-name-text" style="color:var(--on-card);">'+u.title+'</div>'
+        + '<div class="ptile-name-text" style="color:var(--on-card);">'+(u.id==='gs'?'Getting Started':u.id==='fp'?'Final Project':u.num+': '+u.title)+'</div>'
         + '<div style="display:flex;align-items:center;gap:4px;margin-top:7px;font-size:9.5px;font-weight:600;color:var(--on-card-muted);">'
         + '<svg width="9" height="9" viewBox="0 0 12 12" fill="none"><rect x="2" y="5" width="8" height="6" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 5V3.5a2 2 0 014 0V5" stroke="currentColor" stroke-width="1.2"/></svg>'
         + 'Opens '+u.opens+'</div></div>';
@@ -3194,15 +3171,16 @@ function switchPromptTab(uid, idx, total) {
 }
 
 function toggleSuggestedGoals() {
-  var el = document.getElementById("goals-suggestions");
-  if (!el) return;
-  if (el.style.display === "none" || !el.style.display) {
-    el.style.display = "block";
-    el.innerHTML = "";
-    renderSuggestedGoals(el);
-  } else {
-    el.style.display = "none";
-  }
+  var modal = document.getElementById("modal-sug-goals");
+  var body = document.getElementById("sug-modal-body");
+  if (!modal || !body) return;
+  body.innerHTML = "";
+  renderSuggestedGoals(body);
+  modal.style.display = "block";
+}
+function closeSugModal() {
+  var modal = document.getElementById("modal-sug-goals");
+  if (modal) modal.style.display = "none";
 }
 // ── QUICK NOTE MODAL ──────────────────────────────────────────────────────────
 function openQuickNote() {
@@ -3274,6 +3252,17 @@ function saveModalNote() {
   <button class="qnfab-btn" onclick="openQuickNote()" title="Add quick note" aria-label="Add quick note">
     <svg viewBox="0 0 24 24" fill="none" width="24" height="24"><path d="M12 5H7a2 2 0 00-2 2v11a2 2 0 002 2h10a2 2 0 002-2v-5" stroke="#1a1018" stroke-width="2" stroke-linecap="round"/><path d="M17.5 3.5a2.121 2.121 0 013 3L13 14l-4 1 1-4 6.5-7.5z" stroke="#1a1018" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
+</div>
+
+<!-- SUGGESTED GOALS MODAL -->
+<div id="modal-sug-goals" style="display:none;position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);overflow-y:auto;" onclick="if(event.target===this)closeSugModal()">
+  <div style="background:var(--card);border-radius:20px;max-width:560px;margin:60px auto;padding:28px 28px 20px;position:relative;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+      <div style="font-size:16px;font-weight:700;color:var(--on-card);">Suggested goals</div>
+      <button onclick="closeSugModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--on-card-muted);line-height:1;">×</button>
+    </div>
+    <div id="sug-modal-body"></div>
+  </div>
 </div>
 </body>
 </html>
